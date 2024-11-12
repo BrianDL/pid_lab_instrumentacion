@@ -1,78 +1,77 @@
-// Include the required Arduino libraries:
+// Incluir las bibliotecas de Arduino requeridas:
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-// Define to which pin of the Arduino the 1-Wire bus is connected:
+// Definir a qué pin del Arduino está conectado el bus 1-Wire:
 #define ONE_WIRE_BUS 4
 
-// Create a new instance of the oneWire class to communicate with any OneWire device:
+// Crear una nueva instancia de la clase oneWire para comunicarse con cualquier dispositivo OneWire:
 OneWire oneWire(ONE_WIRE_BUS);
 
-// Defining PID control variables
+// Definir variables de control PID
 unsigned long lastTime;
 double Input, Output, Setpoint;
 double errSum, lastErr;
 double kp, ki, kd;
 
-
 void Compute()
 {
-/*How long since we last calculated*/
-unsigned long now = millis();
-double timeChange = (double)(now - lastTime);
- 
-/*Compute all the working error variables*/
-double error = Setpoint - Input;
-errSum += (error * timeChange);
-double dErr = (error - lastErr) / timeChange;
- 
-/*Compute PID Output*/
-Output = kp * error + ki * errSum + kd * dErr;
- 
-/*Remember some variables for next time*/
-lastErr = error;
-lastTime = now;
+    /*Cuánto tiempo ha pasado desde el último cálculo*/
+    unsigned long now = millis();
+    double timeChange = (double)(now - lastTime);
+
+    /*Calcular todas las variables de error de trabajo*/
+    double error = Setpoint - Input;
+    errSum += (error * timeChange);
+    double dErr = (error - lastErr) / timeChange;
+
+    /*Calcular salida PID*/
+    Output = kp * error + ki * errSum + kd * dErr;
+
+    /*Recordar algunas variables para la próxima vez*/
+    lastErr = error;
+    lastTime = now;
 }
 
-// Pass the oneWire reference to DallasTemperature library:
+// Pasar la referencia oneWire a la biblioteca DallasTemperature:
 DallasTemperature sensors(&oneWire);
 
 void setup() {
-  kp = 1;
-  ki = 0;
-  kd = 1;
+    kp = 1;
+    ki = 0;
+    kd = 1;
 
-  // Begin serial communication at a baud rate of 9600:
-  Serial.begin(9600);
-  // Start up the library:
-  sensors.begin();
+    // Iniciar comunicación serial a una velocidad de 9600 baudios:
+    Serial.begin(9600);
+    // Iniciar la biblioteca:
+    sensors.begin();
 }
 
 void loop() {
-  // Send the command for all devices on the bus to perform a temperature conversion:
-  sensors.requestTemperatures();
+    // Enviar el comando para que todos los dispositivos en el bus realicen una conversión de temperatura:
+    sensors.requestTemperatures();
 
-  // Fetch the temperature in degrees Celsius for device index:
-  float tempC = sensors.getTempCByIndex(0); // the index 0 refers to the first device
-  // Fetch the temperature in degrees Fahrenheit for device index:
-  float tempF = sensors.getTempFByIndex(0);
+    // Obtener la temperatura en grados Celsius para el índice del dispositivo:
+    float tempC = sensors.getTempCByIndex(0); // el índice 0 se refiere al primer dispositivo
+    // Obtener la temperatura en grados Fahrenheit para el índice del dispositivo:
+    float tempF = sensors.getTempFByIndex(0);
 
-  // Print the temperature in Celsius in the Serial Monitor:
-  Serial.print("Temperature: ");
-  Serial.print(tempC);
-  Serial.print(" \xC2\xB0"); // shows degree symbol
-  Serial.print("C  |  ");
+    // Imprimir la temperatura en Celsius en el Monitor Serial:
+    Serial.print("Temperatura: ");
+    Serial.print(tempC);
+    Serial.print(" \xC2\xB0"); // muestra el símbolo de grado
+    Serial.print("C  |  ");
 
-  // Print the temperature in Fahrenheit
-  Serial.print(tempF);
-  Serial.print(" \xC2\xB0"); // shows degree symbol
-  Serial.println("F");
+    // Imprimir la temperatura en Fahrenheit
+    Serial.print(tempF);
+    Serial.print(" \xC2\xB0"); // muestra el símbolo de grado
+    Serial.println("F");
 
-  Input = tempC;
-  Compute();
+    Input = tempC;
+    Compute();
 
-  Serial.print(Output);
+    Serial.print(Output);
 
-  // Wait 1 second:
-  delay(1000);
+    // Esperar 1 segundo:
+    delay(1000);
 }
