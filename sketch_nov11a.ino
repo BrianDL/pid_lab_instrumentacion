@@ -4,17 +4,18 @@
 
 // Definir a qué pin del Arduino está conectado el bus 1-Wire:
 #define ONE_WIRE_BUS 4
+#define PWM_PIN 3
 
 // Crear una nueva instancia de la clase oneWire para comunicarse con cualquier dispositivo OneWire:
 OneWire oneWire(ONE_WIRE_BUS);
 
 // Definir variables de control PID
 unsigned long lastTime;
-double Input, Output, Setpoint;
+double Input, Output, Setpoint; // Variable PID
 double errSum, lastErr;
 double kp, ki, kd;
 
-void Compute()
+void ComputePID()
 {
     /*Cuánto tiempo ha pasado desde el último cálculo*/
     unsigned long now = millis();
@@ -37,9 +38,11 @@ void Compute()
 DallasTemperature sensors(&oneWire);
 
 void setup() {
-    kp = 1;
-    ki = 0;
-    kd = 1;
+    kp = 1.0;
+    ki = 0.01;
+    kd = 0.1;
+    
+    pinMode(PWM_PIN, OUTPUT);
 
     // Iniciar comunicación serial a una velocidad de 9600 baudios:
     Serial.begin(9600);
@@ -68,10 +71,22 @@ void loop() {
     Serial.println("F");
 
     Input = tempC;
-    Compute();
+    ComputePID();
 
-    Serial.print(Output);
+    // Mapear la salida PID al rango PWM (0-255)
+    int pwmOutput = map(Output, 0, 255, 0, 255);
 
-    // Esperar 1 segundo:
+    // Limitar la salida PWM al rango válido
+    pwmOutput = constrain(pwmOutput, 0, 255);
+
+    // Escribir la salida PWM al pin
+    analogWrite(PWM_PIN, pwmOutput);
+
+    Serial.print("Salida PID: ");
+    Serial.println(Output);
+    Serial.print("Salida PWM: ");
+    Serial.println(pwmOutput);
+
+    // Esperar 1 segundo
     delay(1000);
 }
