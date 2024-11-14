@@ -38,9 +38,12 @@ void ComputePID()
 DallasTemperature sensors(&oneWire);
 
 void setup() {
-    kp = 1.0;
-    ki = 0.01;
-    kd = 0.1;
+    kp = 3.0;
+    ki = 0.0001;
+    kd = 0.999;
+
+    Setpoint = 40.0;
+    Input = 0;
     
     pinMode(PWM_PIN, OUTPUT);
 
@@ -56,8 +59,19 @@ void loop() {
 
     // Obtener la temperatura en grados Celsius para el índice del dispositivo:
     float tempC = sensors.getTempCByIndex(0); // el índice 0 se refiere al primer dispositivo
-    // Obtener la temperatura en grados Fahrenheit para el índice del dispositivo:
-    float tempF = sensors.getTempFByIndex(0);
+
+    Input = constrain(tempC, 0 ,125);
+    ComputePID();
+
+    // Mapear la salida PID al rango PWM (0-255) e invertirlo
+    int pwmOutput = map(Output, 0, 125, 255, 0);
+
+    // Limitar la salida PWM al rango válido
+    pwmOutput = constrain(pwmOutput, 100, 255);
+
+    // Escribir la salida PWM al pin
+    analogWrite(PWM_PIN, pwmOutput);
+
 
     // Imprimir la temperatura en Celsius en el Monitor Serial:
     Serial.print("Temperatura: ");
@@ -65,26 +79,10 @@ void loop() {
     Serial.print(" \xC2\xB0"); // muestra el símbolo de grado
     Serial.print("C  |  ");
 
-    // Imprimir la temperatura en Fahrenheit
-    Serial.print(tempF);
-    Serial.print(" \xC2\xB0"); // muestra el símbolo de grado
-    Serial.println("F");
-
-    Input = tempC;
-    ComputePID();
-
-    // Mapear la salida PID al rango PWM (0-255)
-    int pwmOutput = map(Output, 0, 255, 0, 255);
-
-    // Limitar la salida PWM al rango válido
-    pwmOutput = constrain(pwmOutput, 0, 255);
-
-    // Escribir la salida PWM al pin
-    analogWrite(PWM_PIN, pwmOutput);
 
     Serial.print("Salida PID: ");
-    Serial.println(Output);
-    Serial.print("Salida PWM: ");
+    Serial.print(Output);
+    Serial.print(" | Salida PWM: ");
     Serial.println(pwmOutput);
 
     // Esperar 1 segundo
