@@ -24,7 +24,7 @@ void ComputePID()
     /*Calcular todas las variables de error de trabajo*/
     double error = Setpoint - Input;
     errSum += (error * timeChange);
-    double dErr = (error - lastErr) / timeChange;
+    double dErr = (error - lastErr);  // / timeChange;
 
     /*Calcular salida PID*/
     Output = kp * error + ki * errSum + kd * dErr;
@@ -38,12 +38,13 @@ void ComputePID()
 DallasTemperature sensors(&oneWire);
 
 void setup() {
-    kp = 3.0;
-    ki = 0.0001;
-    kd = 0.999;
+    kp = 0.5;
+    ki = 0.1;
+    kd = 0.01;
 
-    Setpoint = 40.0;
+    Setpoint = 28.0;
     Input = 0;
+    //Output = 0;
     
     pinMode(PWM_PIN, OUTPUT);
 
@@ -60,14 +61,24 @@ void loop() {
     // Obtener la temperatura en grados Celsius para el índice del dispositivo:
     float tempC = sensors.getTempCByIndex(0); // el índice 0 se refiere al primer dispositivo
 
-    Input = constrain(tempC, 0 ,125);
+    //Input = constrain(tempC, 0 ,125);
+    Input = tempC;
     ComputePID();
 
+   // Output = constrain(Output, 0, 125);
+
     // Mapear la salida PID al rango PWM (0-255) e invertirlo
-    int pwmOutput = map(Output, 0, 125, 255, 0);
+    //int pwmOutput = map(Output, 0, 255, 255, 0);
+    //int pwmOutput = map(Output, -125, 125, 0, 255); //directo para que trabaje solo con el mofstet
+    float coeficiente = Output / 10000;
+    int pwmOutput = int(255 * coeficiente);
 
     // Limitar la salida PWM al rango válido
-    pwmOutput = constrain(pwmOutput, 100, 255);
+    //pwmOutput = constrain(pwmOutput, 100, 255);
+    pwmOutput = constrain(pwmOutput, 0, 100);  // para trabajar solo con el mofset
+    
+
+    //pwmOutput = 0;
 
     // Escribir la salida PWM al pin
     analogWrite(PWM_PIN, pwmOutput);
